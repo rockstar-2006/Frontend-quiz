@@ -1,0 +1,413 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { AnimatedBackground } from '@/components/AnimatedBackground';
+import { Logo } from '@/components/Logo';
+import { useGame } from '@/context/GameContext';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Trash2, Play, ArrowLeft, Clock, Save } from 'lucide-react';
+import { Question, Quiz } from '@/types/quiz';
+import { v4 as uuidv4 } from 'uuid';
+
+const Host = () => {
+  const navigate = useNavigate();
+  const { quizzes, createQuiz, updateQuiz, deleteQuiz, createGame } = useGame();
+  
+  const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
+  const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
+  
+  // New quiz form
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [questions, setQuestions] = useState<Question[]>([]);
+  
+  // Current question form
+  const [questionText, setQuestionText] = useState('');   // can contain code
+  const [options, setOptions] = useState(['', '', '', '']);
+  const [correctIndex, setCorrectIndex] = useState(0);
+  const [timeLimit, setTimeLimit] = useState(15);
+
+  const resetQuestionForm = () => {
+    setQuestionText('');
+    setOptions(['', '', '', '']);
+    setCorrectIndex(0);
+    setTimeLimit(15);
+  };
+
+  const addQuestion = () => {
+    if (!questionText.trim() || options.some(o => !o.trim())) return;
+    
+    const newQuestion: Question = {
+      id: uuidv4(),
+      text: questionText,          // keep all line breaks
+      options: [...options],
+      correctIndex,
+      timeLimit,
+    };
+    
+    setQuestions(prev => [...prev, newQuestion]);
+    resetQuestionForm();
+  };
+
+  const removeQuestion = (index: number) => {
+    setQuestions(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const saveQuiz = async () => {
+    if (!title.trim() || questions.length === 0) return;
+    
+    if (editingQuiz) {
+      await updateQuiz({
+        ...editingQuiz,
+        title: title.trim(),
+        description: description.trim(),
+        questions,
+      });
+    } else {
+      const newQuiz = await createQuiz(title.trim(), description.trim());
+      await updateQuiz({ ...newQuiz, questions });
+    }
+    
+    setView('list');
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setQuestions([]);
+    setEditingQuiz(null);
+    resetQuestionForm();
+  };
+
+  const startEditing = (quiz: Quiz) => {
+    setEditingQuiz(quiz);
+    setTitle(quiz.title);
+    setDescription(quiz.description);
+    setQuestions([...quiz.questions]);
+    setView('edit');
+  };
+
+  const startGame = async (quiz: Quiz) => {
+    const pin = await createGame(quiz);
+    navigate(`/lobby/${pin}`);
+  };
+
+  const handleDeleteQuiz = async (quizId: string) => {
+    await deleteQuiz(quizId);
+  };
+
+  return (
+    <div className="min-h-screen relative overflow-hidden bg-background">
+      <AnimatedBackground />
+      
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Header */}
+        <header className="flex items-center justify-between mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => view === 'list' ? navigate('/') : setView('list')}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+          <Logo size="sm" />
+          <div className="w-20" />
+        </header>
+
+        <AnimatePresence mode="wait">
+          {view === 'list' && (
+            <motion.div
+              key="list"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="max-w-4xl mx-auto"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h1 className="text-3xl font-bold gradient-text">Your Quizzes</h1>
+                <Button
+                  variant="hero"
+                  onClick={() => setView('create')}
+                  className="gap-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  Create Quiz
+                </Button>
+              </div>
+
+              {quizzes.length === 0 ? (
+                <motion.div 
+                  className="glass-card p-12 rounded-2xl text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <p className="text-xl text-muted-foreground mb-4">No quizzes yet!</p>
+                  <p className="text-muted-foreground">Create your first quiz to get started.</p>
+                </motion.div>
+              ) : (
+                <div className="grid gap-4">
+                  {quizzes.map((quiz, index) => (
+                    <motion.div
+                      key={quiz.id}
+                      className="glass-card p-6 rounded-2xl"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      whileHover={{ scale: 1.01 }}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-foreground mb-2">{quiz.title}</h3>
+                          <p className="text-muted-foreground mb-3">{quiz.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {quiz.questions.length} questions
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => startEditing(quiz)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteQuiz(quiz.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="hero"
+                            size="sm"
+                            onClick={() => startGame(quiz)}
+                            disabled={quiz.questions.length === 0}
+                            className="gap-2"
+                          >
+                            <Play className="w-4 h-4" />
+                            Start
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {(view === 'create' || view === 'edit') && (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="max-w-4xl mx-auto"
+            >
+              <h1 className="text-3xl font-bold gradient-text mb-8">
+                {view === 'edit' ? 'Edit Quiz' : 'Create New Quiz'}
+              </h1>
+
+              <div className="grid gap-8">
+                {/* Quiz details */}
+                <div className="glass-card p-6 rounded-2xl">
+                  <h2 className="text-xl font-semibold text-foreground mb-4">Quiz Details</h2>
+                  <div className="grid gap-4">
+                    <div>
+                      <label className="text-sm text-muted-foreground mb-2 block">Title</label>
+                      <Input
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter quiz title..."
+                        className="bg-muted/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground mb-2 block">Description</label>
+                      <Textarea
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Enter quiz description..."
+                        className="bg-muted/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Questions list */}
+                {questions.length > 0 && (
+                  <div className="glass-card p-6 rounded-2xl">
+                    <h2 className="text-xl font-semibold text-foreground mb-4">
+                      Questions ({questions.length})
+                    </h2>
+                    <div className="grid gap-3">
+                      {questions.map((q, index) => {
+                        const isMultiline = q.text.includes('\n');
+                        return (
+                          <motion.div
+                            key={q.id}
+                            className="flex items-start justify-between p-4 bg-muted/30 rounded-xl gap-3"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                          >
+                            <div className="flex-1">
+                              {isMultiline ? (
+                                <pre className="font-mono text-xs whitespace-pre-wrap text-left max-h-32 overflow-auto mb-1">
+                                  {q.text}
+                                </pre>
+                              ) : (
+                                <p className="font-medium text-foreground mb-1">
+                                  {index + 1}. {q.text}
+                                </p>
+                              )}
+                              <p className="text-sm text-muted-foreground mt-1">
+                                <Clock className="w-3 h-3 inline mr-1" />
+                                {q.timeLimit}s • Answer: {q.options[q.correctIndex]}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeQuestion(index)}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add question form */}
+                <div className="glass-card p-6 rounded-2xl">
+                  <h2 className="text-xl font-semibold text-foreground mb-4">Add Question</h2>
+                  <div className="grid gap-6">
+                    {/* Question text (supports code) */}
+                    <div>
+                      <label className="text-sm text-muted-foreground mb-2 block">
+                        Question / Code
+                      </label>
+                      <Textarea
+                        value={questionText}
+                        onChange={(e) => setQuestionText(e.target.value)}
+                        placeholder={`Type your question here, or paste code:
+
+// Sample Java Program
+public class HelloWorld {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+}`}
+                        className="bg-muted/50 font-mono text-xs min-h-[140px] whitespace-pre"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Line breaks and indentation are preserved – perfect for code questions.
+                      </p>
+                    </div>
+                    
+                    {/* Options */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {options.map((opt, index) => (
+                        <div key={index}>
+                          <label className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
+                            <span className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${
+                              index === 0 ? 'bg-answer-red' :
+                              index === 1 ? 'bg-answer-blue' :
+                              index === 2 ? 'bg-answer-green' :
+                              'bg-answer-yellow text-background'
+                            }`}>
+                              {['A', 'B', 'C', 'D'][index]}
+                            </span>
+                            Option {index + 1}
+                            {correctIndex === index && (
+                              <span className="text-success text-xs">(Correct)</span>
+                            )}
+                          </label>
+                          <div className="flex gap-2">
+                            <Input
+                              value={opt}
+                              onChange={(e) => {
+                                const newOpts = [...options];
+                                newOpts[index] = e.target.value;
+                                setOptions(newOpts);
+                              }}
+                              placeholder={`Answer ${index + 1}...`}
+                              className="bg-muted/50"
+                            />
+                            <Button
+                              variant={correctIndex === index ? 'success' : 'outline'}
+                              size="sm"
+                              onClick={() => setCorrectIndex(index)}
+                            >
+                              ✓
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Time limit */}
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <label className="text-sm text-muted-foreground">Time limit:</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {[10, 15, 20, 30].map((t) => (
+                          <Button
+                            key={t}
+                            variant={timeLimit === t ? 'secondary' : 'outline'}
+                            size="sm"
+                            onClick={() => setTimeLimit(t)}
+                          >
+                            {t}s
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="secondary"
+                      onClick={addQuestion}
+                      disabled={!questionText.trim() || options.some(o => !o.trim())}
+                      className="gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Question
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Save button */}
+                <div className="flex justify-end gap-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setView('list');
+                      resetForm();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="hero"
+                    onClick={saveQuiz}
+                    disabled={!title.trim() || questions.length === 0}
+                    className="gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    Save Quiz
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
+export default Host;
