@@ -1,8 +1,15 @@
-// API Service - connects frontend to backend
-// Toggle USE_MOCK to switch between mock (for preview) and real backend
+// src/api/index.ts (or similar)
 
-const USE_MOCK = false; // Set to false when connecting to real backend
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api') as string;
+// Toggle USE_MOCK to switch between mock (for preview) and real backend
+const USE_MOCK = false;
+
+// Normalize backend base URL and always append `/api`
+const RAW_BACKEND_URL =
+  (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:3001';
+
+// Remove trailing slash if present, then append `/api`
+const BACKEND_URL = RAW_BACKEND_URL.replace(/\/$/, '');
+const API_BASE_URL = `${BACKEND_URL}/api`;
 
 import { Quiz, Question, GameState, Player } from '@/types/quiz';
 import * as mockApi from './mockApi';
@@ -44,8 +51,8 @@ const normalizeGame = (raw: any): GameState => {
   return {
     ...raw,
     id: raw.id ?? raw._id,
-    quiz,                                 // always expose quiz if we have it
-    quizId: quiz ? quiz.id : raw.quizId,  // ensure quizId is just the id
+    quiz, // always expose quiz if we have it
+    quizId: quiz ? quiz.id : raw.quizId, // ensure quizId is just the id
     players: Array.isArray(raw.players)
       ? raw.players.map((p: any) => ({
           ...p,
