@@ -35,7 +35,7 @@ const Host = () => {
   const [correctIndex, setCorrectIndex] = useState(0);
   const [timeLimit, setTimeLimit] = useState(15);
 
-  // PDF import state
+  // Import state
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
 
@@ -56,27 +56,27 @@ const Host = () => {
   };
 
   const addQuestion = () => {
-    if (!questionText.trim() || options.some(o => !o.trim())) return;
-    
+    if (!questionText.trim() || options.some((o) => !o.trim())) return;
+
     const newQuestion: Question = {
       id: uuidv4(),
-      text: questionText,          // keep all line breaks
+      text: questionText, // keep all line breaks
       options: [...options],
       correctIndex,
       timeLimit,
     };
-    
-    setQuestions(prev => [...prev, newQuestion]);
+
+    setQuestions((prev) => [...prev, newQuestion]);
     resetQuestionForm();
   };
 
   const removeQuestion = (index: number) => {
-    setQuestions(prev => prev.filter((_, i) => i !== index));
+    setQuestions((prev) => prev.filter((_, i) => i !== index));
   };
 
   const saveQuiz = async () => {
     if (!title.trim() || questions.length === 0) return;
-    
+
     if (editingQuiz) {
       await updateQuiz({
         ...editingQuiz,
@@ -88,7 +88,7 @@ const Host = () => {
       const newQuiz = await createQuiz(title.trim(), description.trim());
       await updateQuiz({ ...newQuiz, questions });
     }
-    
+
     setView('list');
     resetForm();
   };
@@ -110,7 +110,7 @@ const Host = () => {
     await deleteQuiz(quizId);
   };
 
-  // ---------- PDF Import ----------
+  // ---------- TEXT IMPORT (backend route still called import-pdf) ----------
 
   const handlePdfUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -124,6 +124,7 @@ const Host = () => {
       formData.append('file', file);
 
       // Call backend endpoint: POST /api/quizzes/import-pdf
+      // (backend now expects a text file and parses it)
       const res = await fetch(`${API_BASE_URL}/quizzes/import-pdf`, {
         method: 'POST',
         body: formData,
@@ -159,7 +160,7 @@ const Host = () => {
       }));
 
       if (!importedQuestions.length) {
-        throw new Error('No questions found in the imported PDF.');
+        throw new Error('No questions found in the imported file.');
       }
 
       // Fill form from imported data
@@ -168,7 +169,7 @@ const Host = () => {
       setQuestions(importedQuestions);
     } catch (err: any) {
       console.error(err);
-      setImportError(err.message || 'Failed to import quiz from PDF.');
+      setImportError(err.message || 'Failed to import quiz from file.');
     } finally {
       setIsImporting(false);
       // reset the file input so user can upload again if needed
@@ -179,13 +180,13 @@ const Host = () => {
   return (
     <div className="min-h-screen relative overflow-hidden bg-background">
       <AnimatedBackground />
-      
+
       <div className="relative z-10 container mx-auto px-4 py-8">
         {/* Header */}
         <header className="flex items-center justify-between mb-8">
           <Button
             variant="ghost"
-            onClick={() => view === 'list' ? navigate('/') : setView('list')}
+            onClick={() => (view === 'list' ? navigate('/') : setView('list'))}
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -220,13 +221,15 @@ const Host = () => {
               </div>
 
               {quizzes.length === 0 ? (
-                <motion.div 
+                <motion.div
                   className="glass-card p-12 rounded-2xl text-center"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <p className="text-xl text-muted-foreground mb-4">No quizzes yet!</p>
-                  <p className="text-muted-foreground">Create your first quiz to get started.</p>
+                  <p className="text-muted-foreground">
+                    Create your first quiz to get started.
+                  </p>
                 </motion.div>
               ) : (
                 <div className="grid gap-4">
@@ -241,8 +244,12 @@ const Host = () => {
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-foreground mb-2">{quiz.title}</h3>
-                          <p className="text-muted-foreground mb-3">{quiz.description}</p>
+                          <h3 className="text-xl font-bold text-foreground mb-2">
+                            {quiz.title}
+                          </h3>
+                          <p className="text-muted-foreground mb-3">
+                            {quiz.description}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {quiz.questions.length} questions
                           </p>
@@ -296,10 +303,14 @@ const Host = () => {
               <div className="grid gap-8">
                 {/* Quiz details */}
                 <div className="glass-card p-6 rounded-2xl">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Quiz Details</h2>
+                  <h2 className="text-xl font-semibold text-foreground mb-4">
+                    Quiz Details
+                  </h2>
                   <div className="grid gap-4">
                     <div>
-                      <label className="text-sm text-muted-foreground mb-2 block">Title</label>
+                      <label className="text-sm text-muted-foreground mb-2 block">
+                        Title
+                      </label>
                       <Input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
@@ -308,7 +319,9 @@ const Host = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground mb-2 block">Description</label>
+                      <label className="text-sm text-muted-foreground mb-2 block">
+                        Description
+                      </label>
                       <Textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
@@ -319,26 +332,30 @@ const Host = () => {
                   </div>
                 </div>
 
-                {/* Import from PDF */}
+                {/* Import from text file */}
                 <div className="glass-card p-6 rounded-2xl">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-xl font-semibold text-foreground">Import from PDF</h2>
+                    <h2 className="text-xl font-semibold text-foreground">
+                      Import from Text File
+                    </h2>
                     {isImporting && (
                       <span className="text-xs text-muted-foreground">
-                        Reading PDF and extracting questions…
+                        Reading file and extracting questions…
                       </span>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Upload a PDF that contains your questions and options. The backend will parse
-                    it and fill in the quiz for you. You can still edit everything after import.
+                    Upload a <span className="font-mono">.txt</span> file that contains your
+                    questions and options (e.g. exported from a PDF or document). The backend
+                    will parse it and fill in the quiz for you. You can still edit everything
+                    after import.
                   </p>
-                  
+
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <label className="inline-flex items-center gap-2">
                       <input
                         type="file"
-                        accept="application/pdf"
+                        accept=".txt,text/plain"
                         className="hidden"
                         onChange={handlePdfUpload}
                         disabled={isImporting}
@@ -350,23 +367,24 @@ const Host = () => {
                         disabled={isImporting}
                         onClick={(e) => {
                           // trigger the hidden input
-                          const input = (e.currentTarget.previousSibling as HTMLInputElement | null);
+                          const input =
+                            (e.currentTarget.previousSibling as HTMLInputElement | null);
                           input?.click();
                         }}
                       >
                         <Upload className="w-4 h-4" />
-                        {isImporting ? 'Importing…' : 'Choose PDF'}
+                        {isImporting ? 'Importing…' : 'Choose File'}
                       </Button>
                     </label>
                     <span className="text-xs text-muted-foreground">
-                      Recommended: one question with its options grouped together in the PDF.
+                      Format: questions like <span className="font-mono">1. Question…</span>{' '}
+                      options <span className="font-mono">A) …</span>{' '}
+                      and an <span className="font-mono">Answer: A</span> line.
                     </span>
                   </div>
 
                   {importError && (
-                    <p className="text-xs text-destructive mt-2">
-                      {importError}
-                    </p>
+                    <p className="text-xs text-destructive mt-2">{importError}</p>
                   )}
                 </div>
 
@@ -417,7 +435,9 @@ const Host = () => {
 
                 {/* Add question form */}
                 <div className="glass-card p-6 rounded-2xl">
-                  <h2 className="text-xl font-semibold text-foreground mb-4">Add Question</h2>
+                  <h2 className="text-xl font-semibold text-foreground mb-4">
+                    Add Question
+                  </h2>
                   <div className="grid gap-6">
                     {/* Question text (supports code) */}
                     <div>
@@ -437,21 +457,27 @@ public class HelloWorld {
                         className="bg-muted/50 font-mono text-xs min-h-[140px] whitespace-pre"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Line breaks and indentation are preserved – perfect for code questions.
+                        Line breaks and indentation are preserved – perfect for code
+                        questions.
                       </p>
                     </div>
-                    
+
                     {/* Options */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {options.map((opt, index) => (
                         <div key={index}>
                           <label className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
-                            <span className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${
-                              index === 0 ? 'bg-answer-red' :
-                              index === 1 ? 'bg-answer-blue' :
-                              index === 2 ? 'bg-answer-green' :
-                              'bg-answer-yellow text-background'
-                            }`}>
+                            <span
+                              className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${
+                                index === 0
+                                  ? 'bg-answer-red'
+                                  : index === 1
+                                  ? 'bg-answer-blue'
+                                  : index === 2
+                                  ? 'bg-answer-green'
+                                  : 'bg-answer-yellow text-background'
+                              }`}
+                            >
                               {['A', 'B', 'C', 'D'][index]}
                             </span>
                             Option {index + 1}
@@ -484,7 +510,9 @@ public class HelloWorld {
 
                     {/* Time limit */}
                     <div className="flex items-center gap-4 flex-wrap">
-                      <label className="text-sm text-muted-foreground">Time limit:</label>
+                      <label className="text-sm text-muted-foreground">
+                        Time limit:
+                      </label>
                       <div className="flex gap-2 flex-wrap">
                         {[10, 15, 20, 30].map((t) => (
                           <Button
@@ -502,7 +530,9 @@ public class HelloWorld {
                     <Button
                       variant="secondary"
                       onClick={addQuestion}
-                      disabled={!questionText.trim() || options.some(o => !o.trim())}
+                      disabled={
+                        !questionText.trim() || options.some((o) => !o.trim())
+                      }
                       className="gap-2"
                     >
                       <Plus className="w-4 h-4" />
