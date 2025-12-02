@@ -110,7 +110,7 @@ const Host = () => {
     await deleteQuiz(quizId);
   };
 
-  // ---------- NEW: PDF Import ----------
+  // ---------- PDF Import ----------
 
   const handlePdfUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -129,8 +129,21 @@ const Host = () => {
         body: formData,
       });
 
+      // Better error handling: read JSON error from backend
       if (!res.ok) {
-        throw new Error(`Import failed: ${res.status} ${res.statusText}`);
+        let message = `Import failed (${res.status})`;
+        try {
+          const err = await res.json();
+          if (err?.error) {
+            message = err.error;
+            if (err.detail) {
+              message += `: ${err.detail}`;
+            }
+          }
+        } catch {
+          // ignore JSON parse issues, keep default message
+        }
+        throw new Error(message);
       }
 
       // Expecting: { title, description, questions: QuestionLike[] }
@@ -306,7 +319,7 @@ const Host = () => {
                   </div>
                 </div>
 
-                {/* NEW: Import from PDF */}
+                {/* Import from PDF */}
                 <div className="glass-card p-6 rounded-2xl">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-xl font-semibold text-foreground">Import from PDF</h2>
