@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,9 +7,15 @@ import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Logo } from '@/components/Logo';
 import { useGame } from '@/context/GameContext';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Play, ArrowLeft, Clock, Save } from 'lucide-react';
+import { Plus, Trash2, Play, ArrowLeft, Clock, Save, Upload } from 'lucide-react';
 import { Question, Quiz } from '@/types/quiz';
 import { v4 as uuidv4 } from 'uuid';
+
+// Base URL for backend – same as in your API service
+const RAW_BACKEND_URL =
+  (import.meta.env.VITE_API_URL as string | undefined) || 'http://localhost:3001';
+const BACKEND_URL = RAW_BACKEND_URL.replace(/\/$/, '');
+const API_BASE_URL = `${BACKEND_URL}/api`;
 
 const Host = () => {
   const navigate = useNavigate();
@@ -29,11 +35,24 @@ const Host = () => {
   const [correctIndex, setCorrectIndex] = useState(0);
   const [timeLimit, setTimeLimit] = useState(15);
 
+  // PDF import state
+  const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+
   const resetQuestionForm = () => {
     setQuestionText('');
     setOptions(['', '', '', '']);
     setCorrectIndex(0);
     setTimeLimit(15);
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setQuestions([]);
+    setEditingQuiz(null);
+    resetQuestionForm();
+    setImportError(null);
   };
 
   const addQuestion = () => {
@@ -74,14 +93,6 @@ const Host = () => {
     resetForm();
   };
 
-  const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setQuestions([]);
-    setEditingQuiz(null);
-    resetQuestionForm();
-  };
-
   const startEditing = (quiz: Quiz) => {
     setEditingQuiz(quiz);
     setTitle(quiz.title);
@@ -97,6 +108,59 @@ const Host = () => {
 
   const handleDeleteQuiz = async (quizId: string) => {
     await deleteQuiz(quizId);
+  };
+
+  // ---------- NEW: PDF Import ----------
+
+  const handlePdfUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportError(null);
+    setIsImporting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Call backend endpoint: POST /api/quizzes/import-pdf
+      const res = await fetch(`${API_BASE_URL}/quizzes/import-pdf`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error(`Import failed: ${res.status} ${res.statusText}`);
+      }
+
+      // Expecting: { title, description, questions: QuestionLike[] }
+      const data = await res.json();
+
+      // Map backend questions into our Question type and ensure each has an id + default time
+      const importedQuestions: Question[] = (data.questions || []).map((q: any) => ({
+        id: q.id ?? q._id ?? uuidv4(),
+        text: q.text ?? '',
+        options: q.options ?? ['', '', '', ''],
+        correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : 0,
+        timeLimit: q.timeLimit ?? 15,
+      }));
+
+      if (!importedQuestions.length) {
+        throw new Error('No questions found in the imported PDF.');
+      }
+
+      // Fill form from imported data
+      if (data.title) setTitle(data.title);
+      if (data.description) setDescription(data.description);
+      setQuestions(importedQuestions);
+    } catch (err: any) {
+      console.error(err);
+      setImportError(err.message || 'Failed to import quiz from PDF.');
+    } finally {
+      setIsImporting(false);
+      // reset the file input so user can upload again if needed
+      e.target.value = '';
+    }
   };
 
   return (
@@ -131,7 +195,10 @@ const Host = () => {
                 <h1 className="text-3xl font-bold gradient-text">Your Quizzes</h1>
                 <Button
                   variant="hero"
-                  onClick={() => setView('create')}
+                  onClick={() => {
+                    resetForm();
+                    setView('create');
+                  }}
                   className="gap-2"
                 >
                   <Plus className="w-5 h-5" />
@@ -237,6 +304,57 @@ const Host = () => {
                       />
                     </div>
                   </div>
+                </div>
+
+                {/* NEW: Import from PDF */}
+                <div className="glass-card p-6 rounded-2xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-xl font-semibold text-foreground">Import from PDF</h2>
+                    {isImporting && (
+                      <span className="text-xs text-muted-foreground">
+                        Reading PDF and extracting questions…
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Upload a PDF that contains your questions and options. The backend will parse
+                    it and fill in the quiz for you. You can still edit everything after import.
+                  </p>
+                  
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        className="hidden"
+                        onChange={handlePdfUpload}
+                        disabled={isImporting}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="gap-2"
+                        disabled={isImporting}
+                        onClick={(e) => {
+                          // trigger the hidden input
+                          const input = (e.currentTarget.previousSibling as HTMLInputElement | null);
+                          input?.click();
+                        }}
+                      >
+                        <Upload className="w-4 h-4" />
+                        {isImporting ? 'Importing…' : 'Choose PDF'}
+                      </Button>
+                    </label>
+                    <span className="text-xs text-muted-foreground">
+                      Recommended: one question with its options grouped together in the PDF.
+                    </span>
+                  </div>
+
+                  {importError && (
+                    <p className="text-xs text-destructive mt-2">
+                      {importError}
+                    </p>
+                  )}
                 </div>
 
                 {/* Questions list */}
