@@ -208,6 +208,15 @@ const Game = () => {
                 />
               </div>
 
+              {/* Total Votes Counter for Host/Players */}
+              <div className="flex justify-center mb-6">
+                <div className="glass-card px-6 py-2 rounded-full border-primary/20 bg-primary/5">
+                  <span className="text-lg font-bold gradient-text">
+                    {currentGame.players.filter(p => p.currentAnswer !== null || p.textAnswer).length} / {currentGame.players.length} Votes Received
+                  </span>
+                </div>
+              </div>
+
               {/* Question text / code */}
               {(!showResults || isHost) && (
                 <motion.div
@@ -252,27 +261,50 @@ const Game = () => {
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center">
                     {!isHost ? (
-                      <div className="w-full max-w-md space-y-4">
-                        <Input
-                          placeholder="Type your answer here..."
-                          value={textInput}
-                          onChange={(e) => setTextInput(e.target.value)}
-                          className="text-center text-2xl h-16 rounded-xl border-2 border-primary/30 bg-card/50"
-                          disabled={selectedAnswer !== null || showResults}
-                          onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
-                        />
+                      <div className="w-full max-w-xl space-y-6">
+                        <div className="relative">
+                          <Input
+                            placeholder="Type your response here..."
+                            value={textInput}
+                            onChange={(e) => setTextInput(e.target.value)}
+                            className="text-center text-3xl h-24 rounded-2xl border-4 border-primary/20 bg-card/40 focus:border-primary/50 transition-all shadow-inner"
+                            disabled={selectedAnswer !== null || showResults}
+                            onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
+                            maxLength={50}
+                          />
+                          {selectedAnswer !== null && (
+                            <motion.div 
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="absolute -right-4 -top-4 bg-success text-white p-3 rounded-full shadow-lg border-4 border-background"
+                            >
+                              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </motion.div>
+                          )}
+                        </div>
+                        
                         <Button 
                           onClick={handleTextSubmit} 
                           disabled={!textInput.trim() || selectedAnswer !== null || showResults}
-                          className="w-full h-14 text-xl font-bold rounded-xl"
+                          className="w-full h-16 text-2xl font-black rounded-2xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
                           variant="hero"
                         >
-                          Submit <Send className="ml-2 w-5 h-5" />
+                          {selectedAnswer !== null ? 'RESPONSE LOCKED' : 'SUBMIT ANSWER'}
                         </Button>
+                        
+                        <p className="text-center text-muted-foreground animate-pulse">
+                          {selectedAnswer !== null ? 'Wait for the timer to see everyone\'s results!' : 'Type and submit before time runs out!'}
+                        </p>
                       </div>
                     ) : (
-                      <div className="glass-card p-8 rounded-2xl">
-                        <p className="text-xl text-muted-foreground">Players are typing their answers...</p>
+                      <div className="glass-card p-12 rounded-3xl text-center border-2 border-primary/10">
+                        <div className="mb-6 inline-block p-4 bg-primary/10 rounded-full animate-bounce">
+                          <Send className="w-12 h-12 text-primary" />
+                        </div>
+                        <h3 className="text-3xl font-bold mb-2">Polling in Progress...</h3>
+                        <p className="text-xl text-muted-foreground">Waiting for {currentGame.players.length} players to submit their names.</p>
                       </div>
                     )}
                   </div>
