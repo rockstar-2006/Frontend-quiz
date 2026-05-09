@@ -29,10 +29,13 @@ export const ResultsChart = ({ players, question }: ResultsChartProps) => {
     // Text pooling
     const textCounts: Record<string, number> = {};
     players.forEach(p => {
-      if (p.textAnswer) {
-        // Normalize to UPPERCASE for accurate counting as requested
-        const normalized = p.textAnswer.trim().toUpperCase();
-        textCounts[normalized] = (textCounts[normalized] || 0) + 1;
+      // Use a strict null/undefined check to avoid skipping falsy answers like "0"
+      if (p.textAnswer !== null && p.textAnswer !== undefined && p.textAnswer !== '') {
+        // Robust normalization: trim, uppercase, and remove hidden control characters
+        const normalized = p.textAnswer.trim().toUpperCase().replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+        if (normalized) {
+          textCounts[normalized] = (textCounts[normalized] || 0) + 1;
+        }
       }
     });
     
