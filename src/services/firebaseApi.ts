@@ -195,6 +195,7 @@ export const startQuestion = async (gameId: string): Promise<GameState> => {
   const updatedPlayers = game.players.map(p => ({
     ...p,
     currentAnswer: null,
+    textAnswer: null,
     answerTime: null
   }));
   
@@ -295,6 +296,7 @@ export const nextQuestion = async (gameId: string): Promise<GameState> => {
     const resetPlayers = game.players.map(p => ({
       ...p,
       currentAnswer: null,
+      textAnswer: null,
       answerTime: null
     }));
     

@@ -36,10 +36,10 @@ export const ResultsChart = ({ players, question }: ResultsChartProps) => {
       }
     });
     
-    // Sort by count and take top 4
+    // Sort by count and take top 6
     displayData = Object.entries(textCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 4)
+      .slice(0, 6)
       .map(([label, count], index) => ({
         label: label, // Already Uppercase
         count: count,
