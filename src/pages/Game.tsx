@@ -221,9 +221,9 @@ const Game = () => {
                       text={option}
                       onClick={() => handleAnswer(index)}
                       disabled={
-                        showResults || currentGame.status !== 'question'
+                        isHost || showResults || currentGame.status !== 'question'
                       }
-                      selected={selectedAnswer === index}
+                      selected={!isHost && selectedAnswer === index}
                       isCorrect={index === currentQuestion.correctIndex}
                       showResult={
                         showResults || currentGame.status !== 'question'
@@ -253,7 +253,7 @@ const Game = () => {
               )}
 
               {/* Feedback */}
-              {selectedAnswer !== null && !showResults && (
+              {!isHost && selectedAnswer !== null && !showResults && (
                 <motion.div
                   className="text-center mt-8"
                   initial={{ opacity: 0, y: 20 }}
