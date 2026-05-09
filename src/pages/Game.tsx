@@ -281,11 +281,7 @@ const Game = () => {
                   className={`flex-1 flex items-center justify-center rounded-2xl p-8 text-white shadow-2xl ${
                     currentQuestion.type === 'multiple-choice' 
                       ? (selectedAnswer === currentQuestion.correctIndex ? 'bg-success' : 'bg-destructive')
-                      : (
-                          currentPlayer?.textAnswer && currentQuestion.correctAnswer &&
-                          currentPlayer.textAnswer.trim().toLowerCase() === currentQuestion.correctAnswer.trim().toLowerCase()
-                          ? 'bg-success' : 'bg-primary/80'
-                        )
+                      : 'bg-primary/80'
                   }`}
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -294,16 +290,12 @@ const Game = () => {
                     <h2 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-md">
                       {currentQuestion.type === 'multiple-choice' 
                         ? (selectedAnswer === currentQuestion.correctIndex ? 'Correct!' : (selectedAnswer === null ? "Time's Up!" : 'Incorrect!'))
-                        : (
-                            currentQuestion.correctAnswer 
-                            ? (currentPlayer?.textAnswer?.trim().toLowerCase() === currentQuestion.correctAnswer.trim().toLowerCase() ? 'Correct!' : 'Nice try!')
-                            : 'Submitted!'
-                          )
+                        : 'Vote Received!'
                       }
                     </h2>
-                    {currentQuestion.correctAnswer && (
+                    {currentQuestion.type === 'text' && currentQuestion.correctAnswer && (
                       <p className="text-2xl font-semibold opacity-90 drop-shadow-sm">
-                        Correct answer: {currentQuestion.correctAnswer}
+                        Correct answer: {currentQuestion.correctAnswer.toUpperCase()}
                       </p>
                     )}
                   </div>

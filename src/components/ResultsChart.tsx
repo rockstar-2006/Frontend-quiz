@@ -30,8 +30,8 @@ export const ResultsChart = ({ players, question }: ResultsChartProps) => {
     const textCounts: Record<string, number> = {};
     players.forEach(p => {
       if (p.textAnswer) {
-        // Normalize to lowercase for counting, but keep a display version
-        const normalized = p.textAnswer.trim().toLowerCase();
+        // Normalize to UPPERCASE for accurate counting as requested
+        const normalized = p.textAnswer.trim().toUpperCase();
         textCounts[normalized] = (textCounts[normalized] || 0) + 1;
       }
     });
@@ -41,7 +41,7 @@ export const ResultsChart = ({ players, question }: ResultsChartProps) => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 4)
       .map(([label, count], index) => ({
-        label: label.charAt(0).toUpperCase() + label.slice(1),
+        label: label, // Already Uppercase
         count: count,
         colorClass: colorClasses[index % colorClasses.length],
         shape: shapes[index % shapes.length]

@@ -256,8 +256,8 @@ export const endQuestion = async (gameId: string): Promise<GameState> => {
     
     // Text Answer Scoring (if correctAnswer is provided)
     if (currentQuestion.type === 'text' && currentQuestion.correctAnswer && player.textAnswer) {
-      const normalizedPlayer = player.textAnswer.trim().toLowerCase();
-      const normalizedCorrect = currentQuestion.correctAnswer.trim().toLowerCase();
+      const normalizedPlayer = player.textAnswer.trim().toUpperCase();
+      const normalizedCorrect = currentQuestion.correctAnswer.trim().toUpperCase();
       
       if (normalizedPlayer === normalizedCorrect) {
         const actualAnswerTime = player.answerTime ?? currentQuestion.timeLimit;
