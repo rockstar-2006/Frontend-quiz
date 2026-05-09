@@ -65,7 +65,7 @@ export const ResultsChart = ({ players, question }: ResultsChartProps) => {
       <div className="overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-primary/20">
         <div className="flex items-end justify-start h-72 gap-6 px-4 min-w-max">
           {displayData.length > 0 ? displayData.map((data, index) => (
-            <div key={index} className="flex flex-col items-center flex-1 h-full min-w-[100px] max-w-[150px]">
+            <div key={index} className="flex flex-col items-center flex-shrink-0 h-full min-w-[120px] max-w-[180px]">
               <div className="flex-1 w-full flex flex-col justify-end">
                 <motion.div 
                   className={`w-full rounded-t-xl relative group ${data.colorClass}`}

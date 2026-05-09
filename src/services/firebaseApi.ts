@@ -160,6 +160,7 @@ export const joinGame = async (
     avatarId,
     score: 0,
     currentAnswer: null,
+    textAnswer: null,
     answerTime: null,
   };
   
