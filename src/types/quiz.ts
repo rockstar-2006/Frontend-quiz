@@ -3,8 +3,8 @@ export interface Question {
   type: 'multiple-choice' | 'text';
   text: string;
   options: string[];
-  correctIndex?: number;
-  correctAnswer?: string;
+  correctIndex?: number | null;
+  correctAnswer?: string | null;
   timeLimit: number; // in seconds
   code?: string;
 }

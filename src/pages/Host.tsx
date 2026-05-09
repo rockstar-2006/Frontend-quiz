@@ -67,8 +67,8 @@ const Host = () => {
       type: questionType,
       text: questionText,
       options: questionType === 'multiple-choice' ? [...options] : [],
-      correctIndex: questionType === 'multiple-choice' ? correctIndex : undefined,
-      correctAnswer: questionType === 'text' ? correctAnswerText : undefined,
+      correctIndex: questionType === 'multiple-choice' ? correctIndex : null,
+      correctAnswer: questionType === 'text' ? correctAnswerText : null,
       timeLimit,
     };
 
