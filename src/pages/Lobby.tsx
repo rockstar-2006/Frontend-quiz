@@ -123,7 +123,7 @@ const Lobby = () => {
                 <p className="text-sm text-muted-foreground mt-2">Share the PIN with your friends!</p>
               </motion.div>
             ) : (
-              <div className="grid grid-cols-4 md:grid-cols-6 gap-6 justify-items-center">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 sm:gap-6 justify-items-center">
                 <AnimatePresence>
                   {currentGame.players.map((player, index) => (
                     <motion.div
@@ -131,7 +131,7 @@ const Lobby = () => {
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0, opacity: 0 }}
-                      transition={{ delay: index * 0.1 }}
+                      transition={{ delay: index * 0.05 }}
                     >
                       <PlayerAvatar
                         avatarId={player.avatarId}

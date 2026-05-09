@@ -107,8 +107,8 @@ const Join = () => {
                       setPin(value);
                       setError('');
                     }}
-                    placeholder="Enter PIN"
-                    className="text-center text-4xl font-mono tracking-[0.3em] h-20 bg-muted/50 mb-4"
+                    placeholder="PIN"
+                    className="text-center text-3xl sm:text-4xl font-mono tracking-[0.2em] sm:tracking-[0.3em] h-16 sm:h-20 bg-muted/50 mb-4"
                     maxLength={6}
                   />
                   
@@ -149,11 +149,11 @@ const Join = () => {
                   <p className="text-muted-foreground mb-8 text-center">Pick an avatar and nickname</p>
                   
                   {/* Avatar selection */}
-                  <div className="grid grid-cols-4 gap-3 mb-6">
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 sm:gap-3 mb-6">
                     {AVATARS.map((avatar, index) => (
                       <motion.button
                         key={index}
-                        className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl transition-all ${
+                        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-xl sm:text-2xl transition-all ${
                           selectedAvatar === index
                             ? 'bg-primary/30 ring-2 ring-primary scale-110'
                             : 'bg-muted/30 hover:bg-muted/50'

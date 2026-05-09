@@ -230,7 +230,7 @@ const Game = () => {
                       {currentQuestion.text}
                     </pre>
                   ) : (
-                    <h2 className="text-2xl md:text-4xl font-bold text-foreground">
+                    <h2 className="text-xl sm:text-2xl md:text-4xl font-bold text-foreground">
                       {currentQuestion.text}
                     </h2>
                   )}
@@ -240,7 +240,7 @@ const Game = () => {
               {/* Answers */}
               {(!showResults || isHost) ? (
                 currentQuestion.type === 'multiple-choice' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 flex-1">
                     {currentQuestion.options.map((option: string, index: number) => (
                       <AnswerButton
                         key={index}
@@ -261,13 +261,13 @@ const Game = () => {
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center">
                     {!isHost ? (
-                      <div className="w-full max-w-xl space-y-6">
+                      <div className="w-full max-w-xl space-y-4 sm:space-y-6">
                         <div className="relative">
                           <Input
-                            placeholder="Type your response here..."
+                            placeholder="Type response..."
                             value={textInput}
                             onChange={(e) => setTextInput(e.target.value)}
-                            className="text-center text-3xl h-24 rounded-2xl border-4 border-primary/20 bg-card/40 focus:border-primary/50 transition-all shadow-inner"
+                            className="text-center text-xl sm:text-3xl h-16 sm:h-24 rounded-2xl border-4 border-primary/20 bg-card/40 focus:border-primary/50 transition-all shadow-inner"
                             disabled={selectedAnswer !== null || showResults}
                             onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
                             maxLength={50}
