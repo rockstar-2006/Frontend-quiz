@@ -91,13 +91,14 @@ const Game = () => {
     setShowResults(true);
 
     if (isHost) {
+      // Transition to polling results faster (1 second instead of 3)
       setTimeout(async () => {
         try {
           await showLeaderboard();
         } catch (err) {
           console.error('Error showing leaderboard:', err);
         }
-      }, 3000);
+      }, 1000);
     }
   }, [isHost, showLeaderboard]);
 
