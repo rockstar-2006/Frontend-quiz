@@ -1,5 +1,5 @@
 // src/context/GameContext.tsx
-import React, { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, FC } from 'react';
 import { GameState, Player, Quiz, Question } from '@/types/quiz';
 import { useGameApi } from '@/hooks/useGameApi';
 
@@ -30,7 +30,7 @@ interface GameContextType {
     avatarId: number
   ) => Promise<boolean>;
   startGame: () => Promise<void>;
-  submitAnswer: (answerIndex: number) => Promise<void>;
+  submitAnswer: (answerIndex: number | null, textAnswer?: string) => Promise<void>;
   nextQuestion: () => Promise<void>;
   showLeaderboard: () => Promise<void>;
   endGame: () => Promise<void>;
@@ -43,7 +43,7 @@ interface GameContextType {
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
-export const GameProvider: React.FC<{ children: ReactNode }> = ({
+export const GameProvider: FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const gameApi = useGameApi(); // <- implemented below
