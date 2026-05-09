@@ -267,10 +267,10 @@ export const useGameApi = () => {
   );
 
   const submitAnswer = useCallback(
-    async (answerIndex: number): Promise<void> =>
+    async (answerIndex: number | null, textAnswer?: string): Promise<void> =>
       wrap(async () => {
         if (!currentGame || !currentPlayer) return;
-        await api.submitAnswer(currentGame.id, currentPlayer.id, answerIndex);
+        await api.submitAnswer(currentGame.id, currentPlayer.id, answerIndex, textAnswer);
       }),
     [currentGame, currentPlayer, wrap]
   );

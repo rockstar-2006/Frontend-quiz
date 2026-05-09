@@ -210,13 +210,14 @@ export const startQuestion = async (gameId: string): Promise<GameState> => {
 export const submitAnswer = async (
   gameId: string,
   playerId: string,
-  answerIndex: number
+  answerIndex: number | null,
+  textAnswer?: string
 ): Promise<void> => {
   const game = await getGame(gameId);
   if (!game || game.status !== 'question') return;
   
   const playerIndex = game.players.findIndex(p => p.id === playerId);
-  if (playerIndex === -1 || game.players[playerIndex].currentAnswer !== null) return;
+  if (playerIndex === -1 || (game.players[playerIndex].currentAnswer !== null || game.players[playerIndex].textAnswer)) return;
   
   const answerTime = game.questionStartTime 
     ? (Date.now() - game.questionStartTime) / 1000 
@@ -226,6 +227,7 @@ export const submitAnswer = async (
   updatedPlayers[playerIndex] = {
     ...updatedPlayers[playerIndex],
     currentAnswer: answerIndex,
+    textAnswer: textAnswer || null,
     answerTime: answerTime
   };
   
@@ -241,7 +243,8 @@ export const endQuestion = async (gameId: string): Promise<GameState> => {
   const currentQuestion = game.quiz.questions[game.currentQuestionIndex];
   
   const updatedPlayers = game.players.map(player => {
-    if (player.currentAnswer === currentQuestion.correctIndex) {
+    // Multiple Choice Scoring
+    if (currentQuestion.type === 'multiple-choice' && player.currentAnswer === currentQuestion.correctIndex) {
       const actualAnswerTime = player.answerTime ?? currentQuestion.timeLimit;
       const timeLeft = Math.max(0, currentQuestion.timeLimit - actualAnswerTime);
       const timeBonus = Math.round((timeLeft / currentQuestion.timeLimit) * 500);
@@ -250,6 +253,23 @@ export const endQuestion = async (gameId: string): Promise<GameState> => {
         score: player.score + 500 + timeBonus
       };
     }
+    
+    // Text Answer Scoring (if correctAnswer is provided)
+    if (currentQuestion.type === 'text' && currentQuestion.correctAnswer && player.textAnswer) {
+      const normalizedPlayer = player.textAnswer.trim().toLowerCase();
+      const normalizedCorrect = currentQuestion.correctAnswer.trim().toLowerCase();
+      
+      if (normalizedPlayer === normalizedCorrect) {
+        const actualAnswerTime = player.answerTime ?? currentQuestion.timeLimit;
+        const timeLeft = Math.max(0, currentQuestion.timeLimit - actualAnswerTime);
+        const timeBonus = Math.round((timeLeft / currentQuestion.timeLimit) * 500);
+        return {
+          ...player,
+          score: player.score + 500 + timeBonus
+        };
+      }
+    }
+    
     return player;
   });
   

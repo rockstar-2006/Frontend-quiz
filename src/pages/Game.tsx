@@ -8,7 +8,8 @@ import { Leaderboard } from '@/components/Leaderboard';
 import { ResultsChart } from '@/components/ResultsChart';
 import { useGame } from '@/context/GameContext';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight, Home, RotateCcw } from 'lucide-react';
+import { ArrowRight, Home, RotateCcw, Send } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 const Game = () => {
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const Game = () => {
   } = useGame();
 
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [textInput, setTextInput] = useState('');
   const [showResults, setShowResults] = useState(false);
 
   const previousStatusRef = useRef<string | undefined>(undefined);
@@ -40,6 +42,7 @@ const Game = () => {
   useEffect(() => {
     if (!currentGame) return;
     setSelectedAnswer(null);
+    setTextInput('');
     setShowResults(false);
   }, [currentGame?.currentQuestionIndex]);
 
@@ -70,6 +73,19 @@ const Game = () => {
     },
     [currentGame, currentPlayer, selectedAnswer, submitAnswer]
   );
+
+  const handleTextSubmit = useCallback(async () => {
+    if (!currentGame || !currentPlayer || !textInput.trim() || showResults) return;
+    
+    // Lock it locally
+    setSelectedAnswer(-1); // Use -1 as a flag for "submitted text"
+    
+    try {
+      await submitAnswer(null, textInput.trim());
+    } catch (err) {
+      console.error('Error submitting text answer:', err);
+    }
+  }, [currentGame, currentPlayer, textInput, showResults, submitAnswer]);
 
   const handleTimeUp = useCallback(async () => {
     setShowResults(true);
@@ -213,39 +229,81 @@ const Game = () => {
 
               {/* Answers */}
               {(!showResults || isHost) ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
-                  {currentQuestion.options.map((option: string, index: number) => (
-                    <AnswerButton
-                      key={index}
-                      index={index}
-                      text={option}
-                      onClick={() => handleAnswer(index)}
-                      disabled={
-                        isHost || showResults || currentGame.status !== 'question'
-                      }
-                      selected={!isHost && selectedAnswer === index}
-                      isCorrect={index === currentQuestion.correctIndex}
-                      showResult={
-                        showResults || currentGame.status !== 'question'
-                      }
-                    />
-                  ))}
-                </div>
+                currentQuestion.type === 'multiple-choice' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                    {currentQuestion.options.map((option: string, index: number) => (
+                      <AnswerButton
+                        key={index}
+                        index={index}
+                        text={option}
+                        onClick={() => handleAnswer(index)}
+                        disabled={
+                          isHost || showResults || currentGame.status !== 'question'
+                        }
+                        selected={!isHost && selectedAnswer === index}
+                        isCorrect={index === currentQuestion.correctIndex}
+                        showResult={
+                          showResults || currentGame.status !== 'question'
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center">
+                    {!isHost ? (
+                      <div className="w-full max-w-md space-y-4">
+                        <Input
+                          placeholder="Type your answer here..."
+                          value={textInput}
+                          onChange={(e) => setTextInput(e.target.value)}
+                          className="text-center text-2xl h-16 rounded-xl border-2 border-primary/30 bg-card/50"
+                          disabled={selectedAnswer !== null || showResults}
+                          onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
+                        />
+                        <Button 
+                          onClick={handleTextSubmit} 
+                          disabled={!textInput.trim() || selectedAnswer !== null || showResults}
+                          className="w-full h-14 text-xl font-bold rounded-xl"
+                          variant="hero"
+                        >
+                          Submit <Send className="ml-2 w-5 h-5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="glass-card p-8 rounded-2xl">
+                        <p className="text-xl text-muted-foreground">Players are typing their answers...</p>
+                      </div>
+                    )}
+                  </div>
+                )
               ) : (
                 <motion.div
                   className={`flex-1 flex items-center justify-center rounded-2xl p-8 text-white shadow-2xl ${
-                    selectedAnswer === currentQuestion.correctIndex ? 'bg-success' : 'bg-destructive'
+                    currentQuestion.type === 'multiple-choice' 
+                      ? (selectedAnswer === currentQuestion.correctIndex ? 'bg-success' : 'bg-destructive')
+                      : (
+                          currentPlayer?.textAnswer && currentQuestion.correctAnswer &&
+                          currentPlayer.textAnswer.trim().toLowerCase() === currentQuestion.correctAnswer.trim().toLowerCase()
+                          ? 'bg-success' : 'bg-primary/80'
+                        )
                   }`}
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                 >
                   <div className="text-center">
                     <h2 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-md">
-                      {selectedAnswer === currentQuestion.correctIndex ? 'Correct!' : (selectedAnswer === null ? "Time's Up!" : 'Incorrect!')}
+                      {currentQuestion.type === 'multiple-choice' 
+                        ? (selectedAnswer === currentQuestion.correctIndex ? 'Correct!' : (selectedAnswer === null ? "Time's Up!" : 'Incorrect!'))
+                        : (
+                            currentQuestion.correctAnswer 
+                            ? (currentPlayer?.textAnswer?.trim().toLowerCase() === currentQuestion.correctAnswer.trim().toLowerCase() ? 'Correct!' : 'Nice try!')
+                            : 'Submitted!'
+                          )
+                      }
                     </h2>
-                    {selectedAnswer === currentQuestion.correctIndex && (
+                    {currentQuestion.correctAnswer && (
                       <p className="text-2xl font-semibold opacity-90 drop-shadow-sm">
-                        Awesome job!
+                        Correct answer: {currentQuestion.correctAnswer}
                       </p>
                     )}
                   </div>

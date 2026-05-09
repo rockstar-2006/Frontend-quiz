@@ -294,10 +294,11 @@ export const startQuestion = async (gameId: string): Promise<GameState> => {
 export const submitAnswer = async (
   gameId: string,
   playerId: string,
-  answerIndex: number
+  answerIndex: number | null,
+  textAnswer?: string
 ): Promise<void> => {
-  if (USE_MOCK) return mockApi.submitAnswer(gameId, playerId, answerIndex);
-  if (USE_FIREBASE) return firebaseApi.submitAnswer(gameId, playerId, answerIndex);
+  if (USE_MOCK) return mockApi.submitAnswer(gameId, playerId, answerIndex as number);
+  if (USE_FIREBASE) return firebaseApi.submitAnswer(gameId, playerId, answerIndex, textAnswer);
 
   await fetch(`${API_BASE_URL}/games/${gameId}/answer`, {
     method: 'POST',

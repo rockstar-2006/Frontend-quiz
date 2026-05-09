@@ -1,10 +1,12 @@
 export interface Question {
   id: string;
+  type: 'multiple-choice' | 'text';
   text: string;
   options: string[];
-  correctIndex: number;
+  correctIndex?: number;
+  correctAnswer?: string;
   timeLimit: number; // in seconds
-    code?: string;
+  code?: string;
 }
 
 export interface Quiz {
@@ -22,6 +24,7 @@ export interface Player {
   avatarId: number;
   score: number;
   currentAnswer: number | null;
+  textAnswer?: string | null;
   answerTime: number | null;
 }
 

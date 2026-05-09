@@ -29,10 +29,11 @@ const Host = () => {
   const [description, setDescription] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   
-  // Current question form
+  const [questionType, setQuestionType] = useState<'multiple-choice' | 'text'>('multiple-choice');
   const [questionText, setQuestionText] = useState('');   // can contain code
   const [options, setOptions] = useState(['', '', '', '']);
   const [correctIndex, setCorrectIndex] = useState(0);
+  const [correctAnswerText, setCorrectAnswerText] = useState('');
   const [timeLimit, setTimeLimit] = useState(15);
 
   // Import state
@@ -40,9 +41,11 @@ const Host = () => {
   const [importError, setImportError] = useState<string | null>(null);
 
   const resetQuestionForm = () => {
+    setQuestionType('multiple-choice');
     setQuestionText('');
     setOptions(['', '', '', '']);
     setCorrectIndex(0);
+    setCorrectAnswerText('');
     setTimeLimit(15);
   };
 
@@ -56,13 +59,16 @@ const Host = () => {
   };
 
   const addQuestion = () => {
-    if (!questionText.trim() || options.some((o) => !o.trim())) return;
+    if (!questionText.trim()) return;
+    if (questionType === 'multiple-choice' && options.some((o) => !o.trim())) return;
 
     const newQuestion: Question = {
       id: uuidv4(),
-      text: questionText, // keep all line breaks
-      options: [...options],
-      correctIndex,
+      type: questionType,
+      text: questionText,
+      options: questionType === 'multiple-choice' ? [...options] : [],
+      correctIndex: questionType === 'multiple-choice' ? correctIndex : undefined,
+      correctAnswer: questionType === 'text' ? correctAnswerText : undefined,
       timeLimit,
     };
 
@@ -416,7 +422,7 @@ const Host = () => {
                               )}
                               <p className="text-sm text-muted-foreground mt-1">
                                 <Clock className="w-3 h-3 inline mr-1" />
-                                {q.timeLimit}s • Answer: {q.options[q.correctIndex]}
+                                {q.timeLimit}s • {q.type === 'multiple-choice' ? `Answer: ${q.options[q.correctIndex || 0]}` : `Answer: ${q.correctAnswer || 'Poll'}`}
                               </p>
                             </div>
                             <Button
@@ -439,6 +445,25 @@ const Host = () => {
                     Add Question
                   </h2>
                   <div className="grid gap-6">
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={questionType === 'multiple-choice' ? 'secondary' : 'outline'}
+                        onClick={() => setQuestionType('multiple-choice')}
+                        className="flex-1 h-12 rounded-xl"
+                      >
+                        Multiple Choice
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={questionType === 'text' ? 'secondary' : 'outline'}
+                        onClick={() => setQuestionType('text')}
+                        className="flex-1 h-12 rounded-xl"
+                      >
+                        Text Answer
+                      </Button>
+                    </div>
+
                     {/* Question text (supports code) */}
                     <div>
                       <label className="text-sm text-muted-foreground mb-2 block">
@@ -447,66 +472,73 @@ const Host = () => {
                       <Textarea
                         value={questionText}
                         onChange={(e) => setQuestionText(e.target.value)}
-                        placeholder={`Type your question here, or paste code:
-
-// Sample Java Program
-public class HelloWorld {
-    public static void main(String[] args) {
-        System.out.println("Hello, World!");
-}`}
-                        className="bg-muted/50 font-mono text-xs min-h-[140px] whitespace-pre"
+                        placeholder={questionType === 'multiple-choice' ? "Type your question here..." : "Type your question (e.g. What is your favorite color?)"}
+                        className="bg-muted/50 font-mono text-xs min-h-[120px] whitespace-pre"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Line breaks and indentation are preserved – perfect for code
-                        questions.
-                      </p>
                     </div>
 
-                    {/* Options */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {options.map((opt, index) => (
-                        <div key={index}>
-                          <label className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
-                            <span
-                              className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${
-                                index === 0
-                                  ? 'bg-answer-red'
-                                  : index === 1
-                                  ? 'bg-answer-blue'
-                                  : index === 2
-                                  ? 'bg-answer-green'
-                                  : 'bg-answer-yellow text-background'
-                              }`}
-                            >
-                              {['A', 'B', 'C', 'D'][index]}
-                            </span>
-                            Option {index + 1}
-                            {correctIndex === index && (
-                              <span className="text-success text-xs">(Correct)</span>
-                            )}
-                          </label>
-                          <div className="flex gap-2">
-                            <Input
-                              value={opt}
-                              onChange={(e) => {
-                                const newOpts = [...options];
-                                newOpts[index] = e.target.value;
-                                setOptions(newOpts);
-                              }}
-                              placeholder={`Answer ${index + 1}...`}
-                              className="bg-muted/50"
-                            />
-                            <Button
-                              variant={correctIndex === index ? 'success' : 'outline'}
-                              size="sm"
-                              onClick={() => setCorrectIndex(index)}
-                            >
-                              ✓
-                            </Button>
+                    {/* Options (Only for Multiple Choice) */}
+                    {questionType === 'multiple-choice' ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {options.map((opt, index) => (
+                          <div key={index}>
+                            <label className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
+                              <span
+                                className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${
+                                  index === 0
+                                    ? 'bg-answer-red'
+                                    : index === 1
+                                    ? 'bg-answer-blue'
+                                    : index === 2
+                                    ? 'bg-answer-green'
+                                    : 'bg-answer-yellow text-background'
+                                }`}
+                              >
+                                {['A', 'B', 'C', 'D'][index]}
+                              </span>
+                              Option {index + 1}
+                              {correctIndex === index && (
+                                <span className="text-success text-xs">(Correct)</span>
+                              )}
+                            </label>
+                            <div className="flex gap-2">
+                              <Input
+                                value={opt}
+                                onChange={(e) => {
+                                  const newOpts = [...options];
+                                  newOpts[index] = e.target.value;
+                                  setOptions(newOpts);
+                                }}
+                                placeholder={`Answer ${index + 1}...`}
+                                className="bg-muted/50"
+                              />
+                              <Button
+                                variant={correctIndex === index ? 'success' : 'outline'}
+                                size="sm"
+                                onClick={() => setCorrectIndex(index)}
+                              >
+                                ✓
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="text-sm text-muted-foreground mb-2 block">
+                          Correct Answer (Optional - Leave blank for a Poll)
+                        </label>
+                        <Input
+                          value={correctAnswerText}
+                          onChange={(e) => setCorrectAnswerText(e.target.value)}
+                          placeholder="Type the correct answer (e.g. John Doe)..."
+                          className="bg-muted/50 h-12 text-lg"
+                        />
+                        <p className="text-xs text-muted-foreground mt-2 italic">
+                          Answers will be normalized (case-insensitive) for scoring.
+                        </p>
+                      </div>
+                    )}
 
                     {/* Time limit */}
                     <div className="flex items-center gap-4 flex-wrap">
@@ -531,7 +563,7 @@ public class HelloWorld {
                       variant="secondary"
                       onClick={addQuestion}
                       disabled={
-                        !questionText.trim() || options.some((o) => !o.trim())
+                        !questionText.trim() || (questionType === 'multiple-choice' && options.some((o) => !o.trim()))
                       }
                       className="gap-2"
                     >
