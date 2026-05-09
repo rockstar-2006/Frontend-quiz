@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,19 @@ const Join = () => {
   const [selectedAvatar, setSelectedAvatar] = useState(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Auto-fill PIN from URL if present
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pinParam = urlParams.get('pin');
+    if (pinParam && pinParam.length === 6) {
+      setPin(pinParam);
+      // Automatically advance to profile step if PIN is valid
+      api.getGameByPin(pinParam).then(game => {
+        if (game) setStep('profile');
+      }).catch(() => {});
+    }
+  }, []);
 
   const handlePinSubmit = async () => {
     if (pin.length !== 6) {

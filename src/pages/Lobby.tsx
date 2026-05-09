@@ -10,6 +10,7 @@ import { useGame } from '@/context/GameContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Play, Users } from 'lucide-react';
 import { socket } from '@/services/socket';
+import { QRCodeSVG } from 'qrcode.react';
 
 const Lobby = () => {
   const navigate = useNavigate();
@@ -97,6 +98,25 @@ const Lobby = () => {
               {currentGame.quiz.title}
             </h1>
             <PinDisplay pin={currentGame.pin} size="lg" />
+            
+            <motion.div 
+              className="mt-6 flex flex-col items-center"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="bg-white p-4 rounded-2xl shadow-xl">
+                <QRCodeSVG 
+                  value={`${window.location.origin}/join?pin=${currentGame.pin}`}
+                  size={150}
+                  level="H"
+                  includeMargin={false}
+                />
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground font-medium bg-primary/10 px-3 py-1 rounded-full">
+                Scan to join instantly
+              </p>
+            </motion.div>
           </motion.div>
 
           {/* Players */}
